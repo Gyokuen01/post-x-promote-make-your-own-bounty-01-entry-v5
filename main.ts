@@ -5,20 +5,31 @@
  * making your own bounty, with a photo attached. The house reads the post
  * from X itself (its counts, the make.fun link, the @makefunai tag and the
  * play code), so this program has exactly one job: hand the post's address
- * to the house by copying POST.json from the repository root to /output.
+ * to the house by copying POST.json from this repository to /output.
+ *
+ * The house runs this program from a working directory of its own choosing,
+ * so every path here is resolved from this script file's own location,
+ * never from the process working directory.
  */
 import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
+const repoRoot = dirname(fileURLToPath(import.meta.url));
+const postFile = join(repoRoot, "POST.json");
 const outDir = process.env.OUTPUT_DIR ?? "/output";
-const postFile = "POST.json";
 
 function fail(message: string): never {
   console.error(`post-x-promote: ${message}`);
   process.exit(1);
 }
 
-const raw = readFileSync(postFile, "utf8");
+let raw: string;
+try {
+  raw = readFileSync(postFile, "utf8");
+} catch {
+  fail(`cannot read POST.json at ${postFile}`);
+}
 
 let parsed: unknown;
 try {
